@@ -7,27 +7,28 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <div class="bg-glow one"></div><div class="bg-glow two"></div>
   <div class="app">
     <aside class="sidebar">
       <div class="brand">
-        <div class="logo">IL</div>
-        <div>
-          <h1>Pedidos</h1>
-          <p>Inno Life</p><small id="statusConexao">Conectando...</small>
-        </div>
+        <img src="logo_inno_life.webp" alt="Inno Life" class="brand-logo" />
+        <small id="statusConexao">Conectando...</small>
       </div>
       <button class="nav active" data-tab="novo">➕ Novo pedido</button>
       <button class="nav" data-tab="lista">📋 Lista geral</button>
       <button class="nav" data-tab="consolidado">📦 Consolidado</button>
+      <button class="nav" data-tab="mes">✅ Fechamento do mês</button>
+      <button class="nav" data-tab="historico">🗂️ Listas salvas</button>
       <button class="nav" id="recarregar">🔄 Recarregar nuvem</button>
       <button class="nav" onclick="window.print()">🖨️ Imprimir / PDF</button>
     </aside>
 
     <main class="content">
-      <section class="hero">
+      <section class="hero glass">
         <div>
-          <h2>Sistema de Pedidos de Produtos</h2>
-          <p>Os funcionários lançam os produtos e o sistema monta a lista geral com opção de check na conferência.</p>
+          <span class="badge">Controle interno Inno Life</span>
+          <h2>Pedidos de Produtos dos Funcionários</h2>
+          <p>Cadastre pedidos, confira com check e salve a lista mensal quando ela for atendida.</p>
         </div>
         <div class="stats">
           <div><strong id="totalPedidos">0</strong><span>Pedidos</span></div>
@@ -37,7 +38,7 @@
       </section>
 
       <section id="tab-novo" class="panel tab show">
-        <h3>Novo pedido</h3>
+        <div class="panel-title"><h3>Novo pedido</h3><p>Exemplo: Wesley • 2 • Melasonina</p></div>
         <form id="pedidoForm" class="form-grid">
           <label>Funcionário
             <input id="funcionario" type="text" placeholder="Ex: Wesley" required />
@@ -45,10 +46,7 @@
           <label>Produto
             <input id="produto" type="text" placeholder="Ex: Melasonina" required list="produtosSugestoes" />
             <datalist id="produtosSugestoes">
-              <option value="Melasonina"></option>
-              <option value="Bom Hálito"></option>
-              <option value="Pulmoclean"></option>
-              <option value="DrySkin"></option>
+              <option value="Melasonina"></option><option value="Bom Hálito"></option><option value="Pulmoclean"></option><option value="DrySkin"></option>
             </datalist>
           </label>
           <label>Quantidade
@@ -60,40 +58,38 @@
 
       <section id="tab-lista" class="panel tab">
         <div class="panel-head">
-          <h3>Lista de pedidos</h3>
-          <div class="actions">
-            <input id="busca" type="search" placeholder="Buscar funcionário ou produto..." />
-            <button class="danger" id="limparTudo">Limpar tudo</button>
-          </div>
+          <div class="panel-title"><h3>Lista atual de pedidos</h3><p>Marque o check quando separar/conferir o item.</p></div>
+          <div class="actions"><input id="busca" type="search" placeholder="Buscar funcionário ou produto..." /><button class="danger" id="limparTudo">Limpar tudo</button></div>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Check</th>
-                <th>Funcionário</th>
-                <th>Produto</th>
-                <th>Qtd.</th>
-                <th>Data</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody id="listaPedidos"></tbody>
-          </table>
-        </div>
+        <div class="table-wrap"><table><thead><tr><th>Check</th><th>Funcionário</th><th>Produto</th><th>Qtd.</th><th>Data</th><th>Ações</th></tr></thead><tbody id="listaPedidos"></tbody></table></div>
       </section>
 
       <section id="tab-consolidado" class="panel tab">
-        <h3>Resumo consolidado por produto</h3>
+        <div class="panel-title"><h3>Resumo consolidado por produto</h3><p>Total automático de cada produto solicitado.</p></div>
         <div id="resumoProdutos" class="cards"></div>
+      </section>
+
+      <section id="tab-mes" class="panel tab">
+        <div class="panel-title"><h3>Salvar lista do mês como atendida</h3><p>Quando todos os pedidos forem atendidos, salve a lista para histórico e comece uma nova.</p></div>
+        <div class="save-box">
+          <label>Mês da lista
+            <input id="mesReferencia" type="month" />
+          </label>
+          <label>Observação
+            <input id="obsMes" type="text" placeholder="Ex: Lista atendida e entregue" />
+          </label>
+          <button id="salvarMes" class="primary">Salvar lista atendida</button>
+        </div>
+        <div class="summary-line" id="previewMes"></div>
+      </section>
+
+      <section id="tab-historico" class="panel tab">
+        <div class="panel-head"><div class="panel-title"><h3>Listas mensais salvas</h3><p>Histórico das listas já atendidas.</p></div><button class="soft" id="carregarHistorico">Atualizar histórico</button></div>
+        <div id="historicoListas" class="history"></div>
       </section>
     </main>
   </div>
-
-  <template id="emptyTemplate">
-    <tr><td colspan="6" class="empty">Nenhum pedido lançado ainda.</td></tr>
-  </template>
-
+  <template id="emptyTemplate"><tr><td colspan="6" class="empty">Nenhum pedido lançado ainda.</td></tr></template>
   <script src="app.js"></script>
 </body>
 </html>
