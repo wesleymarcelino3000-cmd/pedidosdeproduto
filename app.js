@@ -14,6 +14,8 @@ let pedidos = [];
 let historico = [];
 let produtos = ['Melasonina', 'Bom Hálito', 'Pulmoclean', 'DrySkin'];
 let usandoNuvem = true;
+let adminSession = JSON.parse(localStorage.getItem('innolife_admin_session') || 'null');
+let isAdmin = Boolean(adminSession && adminSession.access_token);
 
 const $ = (id) => document.getElementById(id);
 const api = `${SUPABASE_URL}/rest/v1/${TABLE}`;
@@ -21,7 +23,50 @@ const archiveApi = `${SUPABASE_URL}/rest/v1/${ARCHIVE_TABLE}`;
 const productApi = `${SUPABASE_URL}/rest/v1/${PRODUCT_TABLE}`;
 
 function headers(extra = {}) {
-  return { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', Accept: 'application/json', ...extra };
+  const bearer = isAdmin && adminSession?.access_token ? adminSession.access_token : SUPABASE_KEY;
+  return { apikey: SUPABASE_KEY, Authorization: `Bearer ${bearer}`, 'Content-Type': 'application/json', Accept: 'application/json', ...extra };
+}
+function saveAdminSession(session) {
+  adminSession = session;
+  isAdmin = Boolean(session && session.access_token);
+  if (isAdmin) localStorage.setItem('innolife_admin_session', JSON.stringify(session));
+  else localStorage.removeItem('innolife_admin_session');
+  aplicarPermissoes();
+}
+async function loginAdmin(email, senha) {
+  const data = await supaFetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ email, password: senha })
+  });
+  saveAdminSession(data);
+  await carregarHistorico();
+  await carregarProdutos();
+  renderTudo();
+  toast('Admin liberado.');
+}
+function logoutAdmin() {
+  saveAdminSession(null);
+  abrirAba('novo');
+  renderTudo();
+  toast('Saiu do modo admin.');
+}
+function aplicarPermissoes() {
+  document.body.classList.toggle('is-admin', isAdmin);
+  document.body.classList.toggle('is-employee', !isAdmin);
+  const st = $('statusAdmin');
+  if (st) st.textContent = isAdmin ? 'Admin • funções liberadas' : 'Funcionário • acesso livre';
+  const sair = $('sairAdmin');
+  if (sair) sair.classList.toggle('hidden', !isAdmin);
+  const abrir = $('abrirLoginAdmin');
+  if (abrir) abrir.textContent = isAdmin ? '✅ Admin conectado' : '🔐 Entrar como admin';
+  if (!isAdmin) document.querySelectorAll('.admin-only').forEach(el => el.classList.add('admin-locked'));
+  else document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('admin-locked'));
+}
+function exigirAdmin() {
+  if (isAdmin) return true;
+  toast('Função exclusiva do admin. Entre com e-mail e senha.');
+  return false;
 }
 async function supaFetch(url, options = {}) {
   const res = await fetch(url, options);
@@ -91,6 +136,7 @@ async function carregarPedidos() {
 }
 
 async function carregarHistorico() {
+  if (!isAdmin) { historico = []; renderHistorico(); return; }
   if (!usandoNuvem) { loadLocal(); renderHistorico(); return; }
   try {
     const data = await supaFetch(`${archiveApi}?select=*&order=created_at.desc`, { headers: headers() });
@@ -140,12 +186,14 @@ async function removerPedido(id) {
   saveLocal();
 }
 async function limparPedidos() {
+  if (!exigirAdmin()) return;
   if (!usandoNuvem) { pedidos = []; saveLocal(); return; }
   await supaFetch(`${api}?arquivado=eq.false`, { method: 'DELETE', headers: headers() });
   pedidos = [];
   saveLocal();
 }
 async function salvarListaMes() {
+  if (!exigirAdmin()) return;
   if (!pedidos.length) { toast('Não existe pedido para salvar.'); return; }
   const dataLista = ($('dataListaGeral')?.value || $('dataLista')?.value || currentDate());
   const mes = ($('mesReferencia')?.value || dataLista.slice(0, 7) || currentMonth());
@@ -170,6 +218,7 @@ async function salvarListaMes() {
   toast('Lista do mês salva e lista atual limpa.');
 }
 async function cadastrarProduto(nome) {
+  if (!exigirAdmin()) return;
   nome = nome.trim();
   if (!nome) return;
   if (!produtos.some(p => p.toLowerCase() === nome.toLowerCase())) produtos.push(nome);
@@ -185,6 +234,7 @@ async function cadastrarProduto(nome) {
   }
 }
 function excluirProdutoLocal(nome) {
+  if (!exigirAdmin()) return;
   if (!confirm(`Excluir o produto "${nome}" da lista de seleção?`)) return;
   produtos = produtos.filter(p => p !== nome);
   saveProdLocal();
@@ -203,7 +253,7 @@ function renderPedidos() {
   else filtrados.forEach(p => {
     const tr = document.createElement('tr');
     if (p.checked) tr.classList.add('checked');
-    tr.innerHTML = `<td><input class="check" type="checkbox" ${p.checked ? 'checked' : ''} data-action="check" data-id="${p.id}"></td><td><strong>${escapeHtml(p.funcionario)}</strong></td><td>${escapeHtml(p.produto)}</td><td><strong>${p.quantidade}</strong></td><td>${fmtDate(p.createdAt)}</td><td><button type="button" class="mini" data-action="edit" data-id="${p.id}">Editar</button><button type="button" class="mini delete" data-action="delete" data-id="${p.id}">Excluir</button></td>`;
+    tr.innerHTML = `<td><input class="check" type="checkbox" ${p.checked ? 'checked' : ''} ${isAdmin ? '' : 'disabled'} data-action="check" data-id="${p.id}"></td><td><strong>${escapeHtml(p.funcionario)}</strong></td><td>${escapeHtml(p.produto)}</td><td><strong>${p.quantidade}</strong></td><td>${fmtDate(p.createdAt)}</td><td>${isAdmin ? `<button type="button" class="mini" data-action="edit" data-id="${p.id}">Editar</button><button type="button" class="mini delete" data-action="delete" data-id="${p.id}">Excluir</button>` : '<span class="muted">Somente admin</span>'}</td>`;
     lista.appendChild(tr);
   });
   $('totalPedidos').textContent = pedidos.length;
@@ -248,12 +298,13 @@ function renderProdutos() {
   }
   const box = $('listaProdutos');
   if (!box) return;
-  box.innerHTML = produtos.map(p => `<div class="product-pill"><span>${escapeHtml(p)}</span><button type="button" data-produto="${escapeHtml(p)}">Remover</button></div>`).join('');
+  box.innerHTML = produtos.map(p => `<div class="product-pill"><span>${escapeHtml(p)}</span>${isAdmin ? `<button type="button" data-produto="${escapeHtml(p)}">Remover</button>` : ''}</div>`).join('');
 }
 
-async function toggleCheck(id) { const p = pedidos.find(x => x.id === id); if (!p) return; try { await atualizarPedido(id, { checked: !p.checked }); renderTudo(); } catch (e) { console.error(e); toast('Erro ao atualizar check.'); } }
-async function excluirPedido(id) { if (!confirm('Deseja excluir este pedido?')) return; try { await removerPedido(id); renderTudo(); toast('Pedido excluído.'); } catch (e) { console.error(e); toast('Erro ao excluir pedido.'); } }
+async function toggleCheck(id) { if (!exigirAdmin()) { renderTudo(); return; } const p = pedidos.find(x => x.id === id); if (!p) return; try { await atualizarPedido(id, { checked: !p.checked }); renderTudo(); } catch (e) { console.error(e); toast('Erro ao atualizar check.'); } }
+async function excluirPedido(id) { if (!exigirAdmin()) return; if (!confirm('Deseja excluir este pedido?')) return; try { await removerPedido(id); renderTudo(); toast('Pedido excluído.'); } catch (e) { console.error(e); toast('Erro ao excluir pedido.'); } }
 async function editarPedido(id) {
+  if (!exigirAdmin()) return;
   const p = pedidos.find(x => x.id === id); if (!p) return;
   const funcionario = prompt('Funcionário:', p.funcionario); if (funcionario === null) return;
   const produto = prompt('Produto:', p.produto); if (produto === null) return;
@@ -265,6 +316,10 @@ async function editarPedido(id) {
 
 function configurarEventos() {
   sincronizarDataLista(currentDate());
+  aplicarPermissoes();
+  $('abrirLoginAdmin')?.addEventListener('click', () => { if (isAdmin) return; $('adminLoginForm')?.classList.toggle('hidden'); });
+  $('sairAdmin')?.addEventListener('click', logoutAdmin);
+  $('adminLoginForm')?.addEventListener('submit', async (e) => { e.preventDefault(); const email = $('adminEmail').value.trim(); const senha = $('adminSenha').value; if (!email || !senha) { toast('Informe e-mail e senha do admin.'); return; } const btn = e.target.querySelector('button'); btn.disabled = true; btn.textContent = 'Entrando...'; try { await loginAdmin(email, senha); e.target.reset(); e.target.classList.add('hidden'); } catch (err) { console.error(err); toast('Login admin não autorizado: ' + err.message); } finally { btn.disabled = false; btn.textContent = 'Liberar admin'; } });
   $('mesReferencia').value = currentMonth();
   document.querySelectorAll('.nav[data-tab]').forEach(btn => btn.addEventListener('click', () => abrirAba(btn.dataset.tab)));
   $('recarregar').addEventListener('click', carregarPedidos);
