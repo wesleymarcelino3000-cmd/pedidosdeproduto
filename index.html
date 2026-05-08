@@ -4,14 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Pedidos de Produtos - Inno Life</title>
-  <link rel="icon" href="favicon.ico" sizes="any" />
-  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
-  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="icon" href="favicon.ico" />
+  <link rel="apple-touch-icon" href="assets/icon-180.png" />
   <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#042715" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="Inno Pedidos" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -22,13 +17,14 @@
         <img src="logo_inno_life.webp" alt="Inno Life" class="brand-logo" />
         <small id="statusConexao">Conectando...</small>
       </div>
-      <button class="nav active" data-tab="novo">➕ Novo pedido</button>
-      <button class="nav" data-tab="lista">📋 Lista geral</button>
-      <button class="nav" data-tab="consolidado">📦 Consolidado</button>
-      <button class="nav" data-tab="mes">✅ Fechamento do mês</button>
-      <button class="nav" data-tab="historico">🗂️ Listas salvas</button>
-      <button class="nav" id="recarregar">🔄 Recarregar nuvem</button>
-      <button class="nav" onclick="window.print()">🖨️ Imprimir / PDF</button>
+      <button type="button" class="nav active" data-tab="novo">➕ Novo pedido</button>
+      <button type="button" class="nav" data-tab="lista">📋 Lista geral</button>
+      <button type="button" class="nav" data-tab="consolidado">📦 Consolidado</button>
+      <button type="button" class="nav" data-tab="produtos">🛒 Produtos</button>
+      <button type="button" class="nav" data-tab="mes">✅ Fechamento do mês</button>
+      <button type="button" class="nav" data-tab="historico">🗂️ Listas salvas</button>
+      <button type="button" class="nav" id="recarregar">🔄 Recarregar nuvem</button>
+      <button type="button" class="nav" id="imprimirPdf">🖨️ Imprimir / PDF</button>
     </aside>
 
     <main class="content">
@@ -52,10 +48,8 @@
             <input id="funcionario" type="text" placeholder="Ex: Wesley" required />
           </label>
           <label>Produto
-            <input id="produto" type="text" placeholder="Ex: Melasonina" required list="produtosSugestoes" />
-            <datalist id="produtosSugestoes">
-              <option value="Melasonina"></option><option value="Bom Hálito"></option><option value="Pulmoclean"></option><option value="DrySkin"></option>
-            </datalist>
+            <input id="produto" type="text" placeholder="Ex: Melasonina" required list="produtosSugestoes" autocomplete="off" />
+            <datalist id="produtosSugestoes"></datalist>
           </label>
           <label>Quantidade
             <input id="quantidade" type="number" min="1" value="1" required />
@@ -67,7 +61,7 @@
       <section id="tab-lista" class="panel tab">
         <div class="panel-head">
           <div class="panel-title"><h3>Lista atual de pedidos</h3><p>Marque o check quando separar/conferir o item.</p></div>
-          <div class="actions"><input id="busca" type="search" placeholder="Buscar funcionário ou produto..." /><button class="danger" id="limparTudo">Limpar tudo</button></div>
+          <div class="actions"><input id="busca" type="search" placeholder="Buscar funcionário ou produto..." /><button type="button" class="danger" id="limparTudo">Limpar tudo</button></div>
         </div>
         <div class="table-wrap"><table><thead><tr><th>Check</th><th>Funcionário</th><th>Produto</th><th>Qtd.</th><th>Data</th><th>Ações</th></tr></thead><tbody id="listaPedidos"></tbody></table></div>
       </section>
@@ -75,6 +69,19 @@
       <section id="tab-consolidado" class="panel tab">
         <div class="panel-title"><h3>Resumo consolidado por produto</h3><p>Total automático de cada produto solicitado.</p></div>
         <div id="resumoProdutos" class="cards"></div>
+      </section>
+
+      <section id="tab-produtos" class="panel tab">
+        <div class="panel-head">
+          <div class="panel-title"><h3>Cadastro de produtos</h3><p>Cadastre produtos para aparecerem como opção no pedido.</p></div>
+        </div>
+        <form id="produtoForm" class="product-form">
+          <label>Novo produto
+            <input id="novoProduto" type="text" placeholder="Ex: Melasonina" />
+          </label>
+          <button class="primary" type="submit">Cadastrar produto</button>
+        </form>
+        <div id="listaProdutos" class="product-list"></div>
       </section>
 
       <section id="tab-mes" class="panel tab">
@@ -86,25 +93,18 @@
           <label>Observação
             <input id="obsMes" type="text" placeholder="Ex: Lista atendida e entregue" />
           </label>
-          <button id="salvarMes" class="primary">Salvar lista atendida</button>
+          <button type="button" id="salvarMes" class="primary">Salvar lista atendida</button>
         </div>
         <div class="summary-line" id="previewMes"></div>
       </section>
 
       <section id="tab-historico" class="panel tab">
-        <div class="panel-head"><div class="panel-title"><h3>Listas mensais salvas</h3><p>Histórico das listas já atendidas.</p></div><button class="soft" id="carregarHistorico">Atualizar histórico</button></div>
+        <div class="panel-head"><div class="panel-title"><h3>Listas mensais salvas</h3><p>Histórico das listas já atendidas.</p></div><button type="button" class="soft" id="carregarHistorico">Atualizar histórico</button></div>
         <div id="historicoListas" class="history"></div>
       </section>
     </main>
   </div>
   <template id="emptyTemplate"><tr><td colspan="6" class="empty">Nenhum pedido lançado ainda.</td></tr></template>
   <script src="app.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./service-worker.js').catch(() => {});
-      });
-    }
-  </script>
 </body>
 </html>

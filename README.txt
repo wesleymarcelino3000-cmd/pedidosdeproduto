@@ -1,26 +1,17 @@
 PEDIDOS DE PRODUTOS - INNO LIFE
 
-Novidades desta versão:
-- Interface premium com logo da empresa.
-- Pedidos salvos no Supabase.
-- Lista atual com check de conferência.
-- Consolidado automático por produto.
-- Opção "Salvar lista do mês como atendida".
-- Histórico de listas mensais salvas.
+Correções desta versão:
+- Botões do menu corrigidos e funcionando.
+- Ícone premium aplicado no app, favicon e PWA.
+- Nova aba "Produtos" para cadastrar mais opções de produtos.
+- Produtos cadastrados aparecem automaticamente no campo Produto.
+- Funciona com Supabase e também em modo local.
 
 IMPORTANTE:
-Antes de usar, rode o arquivo supabase.sql no Supabase.
-Se você já tinha rodado o SQL anterior, rode este novo SQL novamente para criar a tabela de histórico e adicionar a coluna arquivado.
+Rode o arquivo supabase.sql no Supabase para criar a tabela de produtos e liberar o cadastro na nuvem.
 
 Como usar:
-1. Abra index.html no navegador ou hospede no Netlify/Vercel.
-2. Cadastre os pedidos dos funcionários.
-3. Marque o check quando separar/conferir.
-4. Quando a lista do mês for atendida, entre em "Fechamento do mês" e clique em "Salvar lista atendida".
-
-
-Atualização de ícone:
-- Ícone premium adicionado ao app.
-- Favicon configurado.
-- Manifest PWA configurado para instalar no celular/computador.
-- Service worker adicionado para modo instalável.
+1. Rode o supabase.sql no Supabase.
+2. Suba todos os arquivos no Netlify/Vercel ou abra index.html no navegador.
+3. Entre na aba Produtos para cadastrar novos produtos.
+4. Faça pedidos na aba Novo pedido.
