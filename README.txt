@@ -1,12 +1,17 @@
-PEDIDOS DE PRODUTOS - INNO LIFE
+PEDIDOS INNO LIFE - VERSÃO SUPABASE CORRIGIDA
 
-Correção desta versão:
-- Botões do menu corrigidos com JavaScript reforçado.
-- Lista geral abre normalmente.
-- Botões Editar, Excluir, Check, Recarregar, Imprimir e Salvar mês funcionando.
-- Aba Produtos adicionada para cadastrar mais produtos.
-- Ícone do app aplicado com manifest PWA.
+Correções:
+- Salvamento no Supabase reforçado.
+- Mensagem de erro real quando o Supabase bloquear ou faltar tabela.
+- Botões do menu com cache atualizado.
+- Cadastro de produtos mantido.
+- Ícone do app mantido.
 
-IMPORTANTE:
-Rode o arquivo supabase.sql no Supabase para criar/atualizar as tabelas.
-Depois, suba todos os arquivos para o Netlify/Vercel ou abra o index.html para testar.
+PASSO OBRIGATÓRIO:
+1. Abra o Supabase.
+2. Vá em SQL Editor.
+3. Cole TODO o conteúdo do arquivo supabase.sql.
+4. Clique em RUN.
+5. Depois publique/suba novamente todos os arquivos deste ZIP.
+
+Se abrir direto pelo computador e aparecer "Erro Supabase", rode o SQL novamente.

@@ -1,5 +1,5 @@
--- App Pedidos de Produtos dos Funcionários - Inno Life
--- Rode este SQL no Supabase: SQL Editor > New query > Run
+-- INNO LIFE PEDIDOS - SUPABASE COMPLETO
+-- Rode tudo no Supabase: SQL Editor > New query > Run
 
 create extension if not exists pgcrypto;
 
@@ -14,17 +14,22 @@ create table if not exists public.pedidos_produtos (
 );
 
 alter table public.pedidos_produtos add column if not exists arquivado boolean not null default false;
+alter table public.pedidos_produtos add column if not exists checked boolean not null default false;
 alter table public.pedidos_produtos enable row level security;
 
+drop policy if exists pedidos_select_public on public.pedidos_produtos;
+drop policy if exists pedidos_insert_public on public.pedidos_produtos;
+drop policy if exists pedidos_update_public on public.pedidos_produtos;
+drop policy if exists pedidos_delete_public on public.pedidos_produtos;
 drop policy if exists "Permitir leitura publica pedidos" on public.pedidos_produtos;
 drop policy if exists "Permitir inserir pedidos" on public.pedidos_produtos;
 drop policy if exists "Permitir atualizar pedidos" on public.pedidos_produtos;
 drop policy if exists "Permitir excluir pedidos" on public.pedidos_produtos;
 
-create policy "Permitir leitura publica pedidos" on public.pedidos_produtos for select using (true);
-create policy "Permitir inserir pedidos" on public.pedidos_produtos for insert with check (true);
-create policy "Permitir atualizar pedidos" on public.pedidos_produtos for update using (true) with check (true);
-create policy "Permitir excluir pedidos" on public.pedidos_produtos for delete using (true);
+create policy pedidos_select_public on public.pedidos_produtos for select to anon, authenticated using (true);
+create policy pedidos_insert_public on public.pedidos_produtos for insert to anon, authenticated with check (true);
+create policy pedidos_update_public on public.pedidos_produtos for update to anon, authenticated using (true) with check (true);
+create policy pedidos_delete_public on public.pedidos_produtos for delete to anon, authenticated using (true);
 
 create table if not exists public.listas_pedidos_mensais (
   id uuid primary key default gen_random_uuid(),
@@ -38,15 +43,19 @@ create table if not exists public.listas_pedidos_mensais (
 
 alter table public.listas_pedidos_mensais enable row level security;
 
+drop policy if exists listas_select_public on public.listas_pedidos_mensais;
+drop policy if exists listas_insert_public on public.listas_pedidos_mensais;
+drop policy if exists listas_update_public on public.listas_pedidos_mensais;
+drop policy if exists listas_delete_public on public.listas_pedidos_mensais;
 drop policy if exists "Permitir leitura publica listas mensais" on public.listas_pedidos_mensais;
 drop policy if exists "Permitir inserir listas mensais" on public.listas_pedidos_mensais;
 drop policy if exists "Permitir atualizar listas mensais" on public.listas_pedidos_mensais;
 drop policy if exists "Permitir excluir listas mensais" on public.listas_pedidos_mensais;
 
-create policy "Permitir leitura publica listas mensais" on public.listas_pedidos_mensais for select using (true);
-create policy "Permitir inserir listas mensais" on public.listas_pedidos_mensais for insert with check (true);
-create policy "Permitir atualizar listas mensais" on public.listas_pedidos_mensais for update using (true) with check (true);
-create policy "Permitir excluir listas mensais" on public.listas_pedidos_mensais for delete using (true);
+create policy listas_select_public on public.listas_pedidos_mensais for select to anon, authenticated using (true);
+create policy listas_insert_public on public.listas_pedidos_mensais for insert to anon, authenticated with check (true);
+create policy listas_update_public on public.listas_pedidos_mensais for update to anon, authenticated using (true) with check (true);
+create policy listas_delete_public on public.listas_pedidos_mensais for delete to anon, authenticated using (true);
 
 create table if not exists public.produtos_cadastrados (
   id uuid primary key default gen_random_uuid(),
@@ -56,16 +65,31 @@ create table if not exists public.produtos_cadastrados (
 
 alter table public.produtos_cadastrados enable row level security;
 
+drop policy if exists produtos_select_public on public.produtos_cadastrados;
+drop policy if exists produtos_insert_public on public.produtos_cadastrados;
+drop policy if exists produtos_update_public on public.produtos_cadastrados;
+drop policy if exists produtos_delete_public on public.produtos_cadastrados;
 drop policy if exists "Permitir leitura publica produtos" on public.produtos_cadastrados;
 drop policy if exists "Permitir inserir produtos" on public.produtos_cadastrados;
 drop policy if exists "Permitir atualizar produtos" on public.produtos_cadastrados;
 drop policy if exists "Permitir excluir produtos" on public.produtos_cadastrados;
 
-create policy "Permitir leitura publica produtos" on public.produtos_cadastrados for select using (true);
-create policy "Permitir inserir produtos" on public.produtos_cadastrados for insert with check (true);
-create policy "Permitir atualizar produtos" on public.produtos_cadastrados for update using (true) with check (true);
-create policy "Permitir excluir produtos" on public.produtos_cadastrados for delete using (true);
+create policy produtos_select_public on public.produtos_cadastrados for select to anon, authenticated using (true);
+create policy produtos_insert_public on public.produtos_cadastrados for insert to anon, authenticated with check (true);
+create policy produtos_update_public on public.produtos_cadastrados for update to anon, authenticated using (true) with check (true);
+create policy produtos_delete_public on public.produtos_cadastrados for delete to anon, authenticated using (true);
+
+-- Permissões necessárias para a chave publishable/anon salvar pelo REST API
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on public.pedidos_produtos to anon, authenticated;
+grant select, insert, update, delete on public.listas_pedidos_mensais to anon, authenticated;
+grant select, insert, update, delete on public.produtos_cadastrados to anon, authenticated;
+
+grant usage, select on all sequences in schema public to anon, authenticated;
 
 insert into public.produtos_cadastrados (nome) values
 ('Melasonina'),('Bom Hálito'),('Pulmoclean'),('DrySkin')
 on conflict (nome) do nothing;
+
+-- Atualiza o cache do PostgREST/Supabase
+notify pgrst, 'reload schema';

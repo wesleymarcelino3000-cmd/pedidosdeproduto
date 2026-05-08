@@ -21,7 +21,18 @@ const archiveApi = `${SUPABASE_URL}/rest/v1/${ARCHIVE_TABLE}`;
 const productApi = `${SUPABASE_URL}/rest/v1/${PRODUCT_TABLE}`;
 
 function headers(extra = {}) {
-  return { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation', ...extra };
+  return { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', Accept: 'application/json', ...extra };
+}
+async function supaFetch(url, options = {}) {
+  const res = await fetch(url, options);
+  const text = await res.text();
+  let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+  if (!res.ok) {
+    const detalhe = typeof data === 'object' && data ? (data.message || data.hint || data.details || JSON.stringify(data)) : String(data || res.statusText);
+    throw new Error(`Supabase ${res.status}: ${detalhe}`);
+  }
+  return data;
 }
 function saveLocal() { localStorage.setItem(STORAGE_KEY, JSON.stringify(pedidos)); }
 function saveHistLocal() { localStorage.setItem(HIST_KEY, JSON.stringify(historico)); }
@@ -54,9 +65,8 @@ function abrirAba(nome) {
 async function carregarPedidos() {
   try {
     setStatus('Conectando na nuvem...');
-    const res = await fetch(`${api}?select=*&arquivado=eq.false&order=created_at.desc`, { headers: headers() });
-    if (!res.ok) throw new Error(await res.text());
-    pedidos = (await res.json()).map(normalize);
+    const data = await supaFetch(`${api}?select=*&arquivado=eq.false&order=created_at.desc`, { headers: headers() });
+    pedidos = data.map(normalize);
     usandoNuvem = true;
     saveLocal();
     setStatus('Online • Supabase');
@@ -66,7 +76,8 @@ async function carregarPedidos() {
     console.warn(err);
     usandoNuvem = false;
     loadLocal();
-    setStatus('Modo local • rode o supabase.sql');
+    setStatus('Erro Supabase • rodar SQL');
+    toast('Não conectou no Supabase: ' + err.message);
   }
   renderTudo();
 }
@@ -74,9 +85,8 @@ async function carregarPedidos() {
 async function carregarHistorico() {
   if (!usandoNuvem) { loadLocal(); renderHistorico(); return; }
   try {
-    const res = await fetch(`${archiveApi}?select=*&order=created_at.desc`, { headers: headers() });
-    if (!res.ok) throw new Error(await res.text());
-    historico = (await res.json()).map(normalizeArchive);
+    const data = await supaFetch(`${archiveApi}?select=*&order=created_at.desc`, { headers: headers() });
+    historico = data.map(normalizeArchive);
     saveHistLocal();
   } catch (err) {
     console.warn(err);
@@ -88,9 +98,8 @@ async function carregarHistorico() {
 async function carregarProdutos() {
   if (!usandoNuvem) { loadLocal(); renderProdutos(); return; }
   try {
-    const res = await fetch(`${productApi}?select=*&order=nome.asc`, { headers: headers() });
-    if (!res.ok) throw new Error(await res.text());
-    const lista = (await res.json()).map(normalizeProduct).filter(Boolean);
+    const data = await supaFetch(`${productApi}?select=*&order=nome.asc`, { headers: headers() });
+    const lista = data.map(normalizeProduct).filter(Boolean);
     produtos = [...new Set([...produtos, ...lista])].sort((a, b) => a.localeCompare(b));
     saveProdLocal();
   } catch (err) {
@@ -106,30 +115,25 @@ async function criarPedido(payload) {
     saveLocal();
     return;
   }
-  const res = await fetch(api, { method: 'POST', headers: headers(), body: JSON.stringify({ funcionario: payload.funcionario, produto: payload.produto, quantidade: payload.quantidade, checked: false, arquivado: false }) });
-  if (!res.ok) throw new Error(await res.text());
-  pedidos.unshift(normalize((await res.json())[0]));
+  const data = await supaFetch(api, { method: 'POST', headers: headers({ Prefer: 'return=representation' }), body: JSON.stringify({ funcionario: payload.funcionario, produto: payload.produto, quantidade: payload.quantidade, checked: false, arquivado: false }) });
+  pedidos.unshift(normalize(data[0]));
   saveLocal();
 }
 async function atualizarPedido(id, patch) {
   if (!usandoNuvem) { pedidos = pedidos.map(p => p.id === id ? { ...p, ...patch } : p); saveLocal(); return; }
-  const res = await fetch(`${api}?id=eq.${id}`, { method: 'PATCH', headers: headers(), body: JSON.stringify(patch) });
-  if (!res.ok) throw new Error(await res.text());
-  const data = await res.json();
+  const data = await supaFetch(`${api}?id=eq.${id}`, { method: 'PATCH', headers: headers({ Prefer: 'return=representation' }), body: JSON.stringify(patch) });
   pedidos = pedidos.map(p => p.id === id ? normalize(data[0]) : p);
   saveLocal();
 }
 async function removerPedido(id) {
   if (!usandoNuvem) { pedidos = pedidos.filter(p => p.id !== id); saveLocal(); return; }
-  const res = await fetch(`${api}?id=eq.${id}`, { method: 'DELETE', headers: headers() });
-  if (!res.ok) throw new Error(await res.text());
+  await supaFetch(`${api}?id=eq.${id}`, { method: 'DELETE', headers: headers() });
   pedidos = pedidos.filter(p => p.id !== id);
   saveLocal();
 }
 async function limparPedidos() {
   if (!usandoNuvem) { pedidos = []; saveLocal(); return; }
-  const res = await fetch(`${api}?arquivado=eq.false`, { method: 'DELETE', headers: headers() });
-  if (!res.ok) throw new Error(await res.text());
+  await supaFetch(`${api}?arquivado=eq.false`, { method: 'DELETE', headers: headers() });
   pedidos = [];
   saveLocal();
 }
@@ -146,10 +150,9 @@ async function salvarListaMes() {
     pedidos = [];
     saveLocal(); saveHistLocal(); renderTudo(); toast('Lista do mês salva.'); return;
   }
-  const ins = await fetch(archiveApi, { method: 'POST', headers: headers(), body: JSON.stringify({ mes_referencia: mes, observacao, total_pedidos: totalPedidos, total_itens: totalItens, pedidos_json: snapshot }) });
-  if (!ins.ok) throw new Error(await ins.text());
+  await supaFetch(archiveApi, { method: 'POST', headers: headers({ Prefer: 'return=minimal' }), body: JSON.stringify({ mes_referencia: mes, observacao, total_pedidos: totalPedidos, total_itens: totalItens, pedidos_json: snapshot }) });
   for (const id of pedidos.map(p => p.id)) {
-    await fetch(`${api}?id=eq.${id}`, { method: 'PATCH', headers: headers(), body: JSON.stringify({ arquivado: true, checked: true }) });
+    await supaFetch(`${api}?id=eq.${id}`, { method: 'PATCH', headers: headers({ Prefer: 'return=minimal' }), body: JSON.stringify({ arquivado: true, checked: true }) });
   }
   pedidos = [];
   saveLocal();
@@ -165,8 +168,11 @@ async function cadastrarProduto(nome) {
   saveProdLocal();
   renderProdutos();
   if (usandoNuvem) {
-    const res = await fetch(productApi, { method: 'POST', headers: headers({ Prefer: 'return=minimal' }), body: JSON.stringify({ nome }) });
-    if (!res.ok && !String(await res.text()).includes('duplicate')) throw new Error('Erro ao salvar produto');
+    try {
+      await supaFetch(productApi, { method: 'POST', headers: headers({ Prefer: 'return=minimal' }), body: JSON.stringify({ nome }) });
+    } catch (e) {
+      if (!String(e.message).toLowerCase().includes('duplicate') && !String(e.message).toLowerCase().includes('unique')) throw e;
+    }
   }
 }
 function excluirProdutoLocal(nome) {
@@ -252,7 +258,7 @@ function configurarEventos() {
   $('imprimir').addEventListener('click', () => window.print());
   $('busca').addEventListener('input', renderPedidos);
   $('limparTudo').addEventListener('click', async () => { if (!confirm('Deseja apagar todos os pedidos atuais?')) return; try { await limparPedidos(); renderTudo(); toast('Lista limpa.'); } catch (e) { console.error(e); toast('Erro ao limpar lista.'); } });
-  $('salvarMes').addEventListener('click', async () => { try { await salvarListaMes(); } catch (e) { console.error(e); toast('Erro ao salvar lista do mês. Rode o supabase.sql atualizado.'); } });
+  $('salvarMes').addEventListener('click', async () => { try { await salvarListaMes(); } catch (e) { console.error(e); toast('Erro Supabase: ' + e.message); } });
   $('carregarHistorico').addEventListener('click', carregarHistorico);
 
   $('pedidoForm').addEventListener('submit', async (e) => {
@@ -266,7 +272,7 @@ function configurarEventos() {
       await criarPedido({ funcionario, produto, quantidade });
       if (!produtos.some(p => p.toLowerCase() === produto.toLowerCase())) { produtos.push(produto); produtos.sort((a, b) => a.localeCompare(b)); saveProdLocal(); }
       renderTudo(); e.target.reset(); $('quantidade').value = 1; $('funcionario').focus(); toast('Pedido adicionado.'); abrirAba('lista');
-    } catch (err) { console.error(err); toast('Erro ao salvar. Rode o supabase.sql atualizado.'); }
+    } catch (err) { console.error(err); toast('Erro Supabase: ' + err.message); }
     finally { btn.disabled = false; btn.textContent = 'Adicionar pedido'; }
   });
 
@@ -274,7 +280,7 @@ function configurarEventos() {
     e.preventDefault();
     const nome = $('novoProduto').value.trim();
     if (!nome) { toast('Digite o nome do produto.'); return; }
-    try { await cadastrarProduto(nome); $('novoProduto').value = ''; toast('Produto cadastrado.'); } catch (err) { console.error(err); toast('Produto salvo localmente. Rode o supabase.sql para salvar na nuvem.'); }
+    try { await cadastrarProduto(nome); $('novoProduto').value = ''; toast('Produto cadastrado.'); } catch (err) { console.error(err); toast('Produto local. Erro Supabase: ' + err.message); }
   });
 
   $('listaPedidos').addEventListener('click', (e) => {
