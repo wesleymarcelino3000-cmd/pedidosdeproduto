@@ -23,3 +23,5 @@ Atualização desta versão:
 - Histórico mostra a data escolhida da lista.
 
 IMPORTANTE: rode novamente o supabase.sql para adicionar a coluna data_lista.
+
+- Na Lista Geral, agora existe o botão ✅ Lista Atendida com campo de data para salvar direto no histórico.

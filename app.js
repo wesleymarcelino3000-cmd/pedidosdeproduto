@@ -55,6 +55,12 @@ function fmtDate(iso) { try { return new Date(iso).toLocaleString('pt-BR'); } ca
 function currentMonth() { return new Date().toISOString().slice(0, 7); }
 function currentDate() { return new Date().toISOString().slice(0, 10); }
 function fmtDateOnly(dateStr) { if (!dateStr) return '-'; const [y,m,d] = String(dateStr).slice(0,10).split('-'); return y && m && d ? `${d}/${m}/${y}` : dateStr; }
+function sincronizarDataLista(valor) {
+  const data = valor || currentDate();
+  if ($('dataLista')) $('dataLista').value = data;
+  if ($('dataListaGeral')) $('dataListaGeral').value = data;
+  if ($('mesReferencia')) $('mesReferencia').value = data.slice(0, 7);
+}
 function escapeHtml(str) { return String(str ?? '').replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c])); }
 
 function abrirAba(nome) {
@@ -141,9 +147,9 @@ async function limparPedidos() {
 }
 async function salvarListaMes() {
   if (!pedidos.length) { toast('Não existe pedido para salvar.'); return; }
-  const dataLista = $('dataLista').value || currentDate();
-  const mes = $('mesReferencia').value || dataLista.slice(0, 7) || currentMonth();
-  const observacao = $('obsMes').value.trim() || 'Lista mensal atendida';
+  const dataLista = ($('dataListaGeral')?.value || $('dataLista')?.value || currentDate());
+  const mes = ($('mesReferencia')?.value || dataLista.slice(0, 7) || currentMonth());
+  const observacao = ($('obsListaGeral')?.value.trim() || $('obsMes')?.value.trim() || 'Lista mensal atendida');
   const totalPedidos = pedidos.length;
   const totalItens = pedidos.reduce((s, p) => s + Number(p.quantidade), 0);
   const snapshot = pedidos.map(p => ({ funcionario: p.funcionario, produto: p.produto, quantidade: p.quantidade, checked: p.checked, data: p.createdAt }));
@@ -203,8 +209,11 @@ function renderPedidos() {
   $('totalPedidos').textContent = pedidos.length;
   $('totalItens').textContent = pedidos.reduce((s, p) => s + Number(p.quantidade), 0);
   $('totalCheck').textContent = pedidos.filter(p => p.checked).length;
+  const textoPreview = `Lista atual: ${pedidos.length} pedidos • ${pedidos.reduce((s, p) => s + Number(p.quantidade), 0)} itens • ${pedidos.filter(p => p.checked).length} conferidos • Data selecionada: ${fmtDateOnly($('dataListaGeral')?.value || $('dataLista')?.value || currentDate())}.`;
   const prev = $('previewMes');
-  if (prev) prev.textContent = `Lista atual: ${pedidos.length} pedidos • ${pedidos.reduce((s, p) => s + Number(p.quantidade), 0)} itens • ${pedidos.filter(p => p.checked).length} conferidos • Data selecionada: ${fmtDateOnly($('dataLista')?.value || currentDate())}.`;
+  if (prev) prev.textContent = textoPreview;
+  const prevGeral = $('previewListaGeral');
+  if (prevGeral) prevGeral.textContent = textoPreview;
 }
 function renderResumo() {
   const box = $('resumoProdutos');
@@ -255,16 +264,18 @@ async function editarPedido(id) {
 }
 
 function configurarEventos() {
-  $('dataLista').value = currentDate();
+  sincronizarDataLista(currentDate());
   $('mesReferencia').value = currentMonth();
   document.querySelectorAll('.nav[data-tab]').forEach(btn => btn.addEventListener('click', () => abrirAba(btn.dataset.tab)));
   $('recarregar').addEventListener('click', carregarPedidos);
   $('imprimir').addEventListener('click', () => window.print());
   $('busca').addEventListener('input', renderPedidos);
   $('limparTudo').addEventListener('click', async () => { if (!confirm('Deseja apagar todos os pedidos atuais?')) return; try { await limparPedidos(); renderTudo(); toast('Lista limpa.'); } catch (e) { console.error(e); toast('Erro ao limpar lista.'); } });
-  $('dataLista').addEventListener('change', renderPedidos);
+  $('dataLista').addEventListener('change', () => { sincronizarDataLista($('dataLista').value); renderPedidos(); });
+  $('dataListaGeral').addEventListener('change', () => { sincronizarDataLista($('dataListaGeral').value); renderPedidos(); });
   $('mesReferencia').addEventListener('change', renderPedidos);
-  $('salvarMes').addEventListener('click', async () => { try { await salvarListaMes(); } catch (e) { console.error(e); toast('Erro Supabase: ' + e.message); } });
+  $('listaAtendidaGeral').addEventListener('click', async () => { try { await salvarListaMes(); abrirAba('historico'); } catch (e) { console.error(e); toast('Erro Supabase: ' + e.message); } });
+  $('salvarMes').addEventListener('click', async () => { try { await salvarListaMes(); abrirAba('historico'); } catch (e) { console.error(e); toast('Erro Supabase: ' + e.message); } });
   $('carregarHistorico').addEventListener('click', carregarHistorico);
 
   $('pedidoForm').addEventListener('submit', async (e) => {

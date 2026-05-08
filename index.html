@@ -64,6 +64,16 @@
           <div class="panel-title"><h3>Lista atual de pedidos</h3><p>Marque o check quando separar/conferir o item.</p></div>
           <div class="actions"><input id="busca" type="search" placeholder="Buscar funcionário ou produto..." /><button type="button" class="danger" id="limparTudo">Limpar tudo</button></div>
         </div>
+        <div class="quick-save-list">
+          <label>Data da lista
+            <input id="dataListaGeral" type="date" />
+          </label>
+          <label>Observação
+            <input id="obsListaGeral" type="text" placeholder="Ex: Lista atendida e entregue" />
+          </label>
+          <button type="button" id="listaAtendidaGeral" class="primary">✅ Lista Atendida</button>
+        </div>
+        <div class="summary-line" id="previewListaGeral"></div>
         <div class="table-wrap"><table><thead><tr><th>Check</th><th>Funcionário</th><th>Produto</th><th>Qtd.</th><th>Data</th><th>Ações</th></tr></thead><tbody id="listaPedidos"></tbody></table></div>
       </section>
 
@@ -107,6 +117,6 @@
     </main>
   </div>
   <template id="emptyTemplate"><tr><td colspan="6" class="empty">Nenhum pedido lançado ainda.</td></tr></template>
-  <script src="app.js?v=9-logo-data"></script>
+  <script src="app.js?v=10-lista-atendida"></script>
 </body>
 </html>
