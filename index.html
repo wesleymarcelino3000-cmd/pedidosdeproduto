@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pedidos de Produtos - Inno Life</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">IL</div>
+        <div>
+          <h1>Pedidos</h1>
+          <p>Inno Life</p><small id="statusConexao">Conectando...</small>
+        </div>
+      </div>
+      <button class="nav active" data-tab="novo">➕ Novo pedido</button>
+      <button class="nav" data-tab="lista">📋 Lista geral</button>
+      <button class="nav" data-tab="consolidado">📦 Consolidado</button>
+      <button class="nav" id="recarregar">🔄 Recarregar nuvem</button>
+      <button class="nav" onclick="window.print()">🖨️ Imprimir / PDF</button>
+    </aside>
+
+    <main class="content">
+      <section class="hero">
+        <div>
+          <h2>Sistema de Pedidos de Produtos</h2>
+          <p>Os funcionários lançam os produtos e o sistema monta a lista geral com opção de check na conferência.</p>
+        </div>
+        <div class="stats">
+          <div><strong id="totalPedidos">0</strong><span>Pedidos</span></div>
+          <div><strong id="totalItens">0</strong><span>Itens</span></div>
+          <div><strong id="totalCheck">0</strong><span>Conferidos</span></div>
+        </div>
+      </section>
+
+      <section id="tab-novo" class="panel tab show">
+        <h3>Novo pedido</h3>
+        <form id="pedidoForm" class="form-grid">
+          <label>Funcionário
+            <input id="funcionario" type="text" placeholder="Ex: Wesley" required />
+          </label>
+          <label>Produto
+            <input id="produto" type="text" placeholder="Ex: Melasonina" required list="produtosSugestoes" />
+            <datalist id="produtosSugestoes">
+              <option value="Melasonina"></option>
+              <option value="Bom Hálito"></option>
+              <option value="Pulmoclean"></option>
+              <option value="DrySkin"></option>
+            </datalist>
+          </label>
+          <label>Quantidade
+            <input id="quantidade" type="number" min="1" value="1" required />
+          </label>
+          <button class="primary" type="submit">Adicionar pedido</button>
+        </form>
+      </section>
+
+      <section id="tab-lista" class="panel tab">
+        <div class="panel-head">
+          <h3>Lista de pedidos</h3>
+          <div class="actions">
+            <input id="busca" type="search" placeholder="Buscar funcionário ou produto..." />
+            <button class="danger" id="limparTudo">Limpar tudo</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Check</th>
+                <th>Funcionário</th>
+                <th>Produto</th>
+                <th>Qtd.</th>
+                <th>Data</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="listaPedidos"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="tab-consolidado" class="panel tab">
+        <h3>Resumo consolidado por produto</h3>
+        <div id="resumoProdutos" class="cards"></div>
+      </section>
+    </main>
+  </div>
+
+  <template id="emptyTemplate">
+    <tr><td colspan="6" class="empty">Nenhum pedido lançado ainda.</td></tr>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
