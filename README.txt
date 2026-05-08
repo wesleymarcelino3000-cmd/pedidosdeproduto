@@ -17,3 +17,10 @@ Como usar:
 2. Cadastre os pedidos dos funcionários.
 3. Marque o check quando separar/conferir.
 4. Quando a lista do mês for atendida, entre em "Fechamento do mês" e clique em "Salvar lista atendida".
+
+
+Atualização de ícone:
+- Ícone premium adicionado ao app.
+- Favicon configurado.
+- Manifest PWA configurado para instalar no celular/computador.
+- Service worker adicionado para modo instalável.
