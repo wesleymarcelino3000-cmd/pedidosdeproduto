@@ -16,15 +16,26 @@
       <div class="brand">
         <img src="assets/logo_inno_life.webp" alt="Inno Life" class="brand-logo" />
         <small id="statusConexao">Conectando...</small>
+        <small id="statusAdmin" class="admin-status">Funcionário • acesso livre</small>
+      </div>
+
+      <div class="admin-box">
+        <button type="button" class="admin-toggle" id="abrirLoginAdmin">🔐 Entrar como admin</button>
+        <form id="adminLoginForm" class="admin-login hidden">
+          <input id="adminEmail" type="email" placeholder="E-mail admin" autocomplete="email" />
+          <input id="adminSenha" type="password" placeholder="Senha" autocomplete="current-password" />
+          <button type="submit" class="primary small-full">Liberar admin</button>
+        </form>
+        <button type="button" class="admin-toggle hidden" id="sairAdmin">Sair do admin</button>
       </div>
       <button type="button" class="nav active" data-tab="novo">➕ Novo pedido</button>
       <button type="button" class="nav" data-tab="lista">📋 Lista geral</button>
       <button type="button" class="nav" data-tab="consolidado">📦 Consolidado</button>
-      <button type="button" class="nav" data-tab="produtos">🏷️ Produtos</button>
-      <button type="button" class="nav" data-tab="mes">✅ Fechamento do mês</button>
-      <button type="button" class="nav" data-tab="historico">🗂️ Listas salvas</button>
+      <button type="button" class="nav admin-only" data-tab="produtos">🏷️ Produtos</button>
+      <button type="button" class="nav admin-only" data-tab="mes">✅ Fechamento do mês</button>
+      <button type="button" class="nav admin-only" data-tab="historico">🗂️ Listas salvas</button>
       <button type="button" class="nav" id="recarregar">🔄 Recarregar nuvem</button>
-      <button type="button" class="nav" id="imprimir">🖨️ Imprimir / PDF</button>
+      <button type="button" class="nav admin-only" id="imprimir">🖨️ Imprimir / PDF</button>
     </aside>
 
     <main class="content">
@@ -62,9 +73,9 @@
       <section id="tab-lista" class="panel tab">
         <div class="panel-head">
           <div class="panel-title"><h3>Lista atual de pedidos</h3><p>Marque o check quando separar/conferir o item.</p></div>
-          <div class="actions"><input id="busca" type="search" placeholder="Buscar funcionário ou produto..." /><button type="button" class="danger" id="limparTudo">Limpar tudo</button></div>
+          <div class="actions"><input id="busca" type="search" placeholder="Buscar funcionário ou produto..." /><button type="button" class="danger admin-only" id="limparTudo">Limpar tudo</button></div>
         </div>
-        <div class="quick-save-list">
+        <div class="quick-save-list admin-only">
           <label>Data da lista
             <input id="dataListaGeral" type="date" />
           </label>
@@ -117,6 +128,6 @@
     </main>
   </div>
   <template id="emptyTemplate"><tr><td colspan="6" class="empty">Nenhum pedido lançado ainda.</td></tr></template>
-  <script src="app.js?v=10-lista-atendida"></script>
+  <script src="app.js?v=11-admin-supabase"></script>
 </body>
 </html>

@@ -90,3 +90,28 @@ input,button{
     overflow:visible;
   }
 }
+
+/* Controle de acesso Admin Supabase */
+.admin-status{font-weight:900;color:#f6f9d4!important}
+.admin-box{margin:-10px 0 18px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:12px}
+.admin-toggle{width:100%;background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.10);padding:12px 14px;border-radius:15px;text-align:center;font-weight:950}
+.admin-login{display:grid;gap:8px;margin-top:10px}
+.admin-login input{margin:0;background:rgba(255,255,255,.95);padding:12px;border-radius:14px}
+.small-full{width:100%;padding:12px 14px}
+.hidden{display:none!important}
+.admin-locked{display:none!important}
+.muted{color:#78906e;font-size:12px;font-weight:800}
+body.is-admin .admin-toggle{background:linear-gradient(135deg,#0b5c24,#bfcb00);box-shadow:0 14px 35px rgba(178,199,0,.18)}
+body.is-employee .check:disabled{opacity:.45;cursor:not-allowed}
+
+
+/* Segurança visual: por padrão, toda função admin fica escondida antes mesmo do JS carregar */
+.admin-only{display:none!important;}
+body.is-admin .admin-only{display:revert!important;}
+body.is-admin .quick-save-list.admin-only{display:grid!important;}
+body.is-admin button.admin-only{display:block!important;}
+body.is-admin .actions .admin-only{display:inline-block!important;}
+.admin-locked{display:none!important;}
+body:not(.is-admin) #tab-produtos,
+body:not(.is-admin) #tab-mes,
+body:not(.is-admin) #tab-historico{display:none!important;}

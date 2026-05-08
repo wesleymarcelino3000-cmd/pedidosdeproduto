@@ -15,7 +15,9 @@ let historico = [];
 let produtos = ['Melasonina', 'Bom Hálito', 'Pulmoclean', 'DrySkin'];
 let usandoNuvem = true;
 let adminSession = JSON.parse(localStorage.getItem('innolife_admin_session') || 'null');
-let isAdmin = Boolean(adminSession && adminSession.access_token);
+// Por segurança, o sistema sempre inicia como funcionário.
+// O modo admin só é liberado após validar a sessão no Supabase Auth.
+let isAdmin = false;
 
 const $ = (id) => document.getElementById(id);
 const api = `${SUPABASE_URL}/rest/v1/${TABLE}`;
@@ -32,6 +34,21 @@ function saveAdminSession(session) {
   if (isAdmin) localStorage.setItem('innolife_admin_session', JSON.stringify(session));
   else localStorage.removeItem('innolife_admin_session');
   aplicarPermissoes();
+}
+async function validarSessaoAdmin() {
+  // Se não tiver sessão salva, permanece acesso livre de funcionário.
+  if (!adminSession?.access_token) { saveAdminSession(null); return false; }
+  try {
+    await supaFetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${adminSession.access_token}`, Accept: 'application/json' }
+    });
+    saveAdminSession(adminSession);
+    return true;
+  } catch (err) {
+    console.warn('Sessão admin expirada ou inválida', err);
+    saveAdminSession(null);
+    return false;
+  }
 }
 async function loginAdmin(email, senha) {
   const data = await supaFetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
@@ -60,8 +77,7 @@ function aplicarPermissoes() {
   if (sair) sair.classList.toggle('hidden', !isAdmin);
   const abrir = $('abrirLoginAdmin');
   if (abrir) abrir.textContent = isAdmin ? '✅ Admin conectado' : '🔐 Entrar como admin';
-  if (!isAdmin) document.querySelectorAll('.admin-only').forEach(el => el.classList.add('admin-locked'));
-  else document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('admin-locked'));
+  document.querySelectorAll('.admin-only').forEach(el => el.classList.toggle('admin-locked', !isAdmin));
 }
 function exigirAdmin() {
   if (isAdmin) return true;
@@ -372,7 +388,12 @@ function configurarEventos() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  try { configurarEventos(); carregarPedidos(); }
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    configurarEventos();
+    aplicarPermissoes();
+    await validarSessaoAdmin();
+    await carregarPedidos();
+  }
   catch (err) { console.error(err); setStatus('Erro no app'); alert('Erro ao iniciar o app. Verifique se todos os arquivos foram enviados.'); }
 });

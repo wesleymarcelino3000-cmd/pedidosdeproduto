@@ -1,27 +1,39 @@
-PEDIDOS INNO LIFE - VERSÃO SUPABASE CORRIGIDA
+PEDIDOS DE PRODUTOS - INNO LIFE
 
-Correções:
-- Salvamento no Supabase reforçado.
-- Mensagem de erro real quando o Supabase bloquear ou faltar tabela.
-- Botões do menu com cache atualizado.
-- Cadastro de produtos mantido.
-- Ícone do app mantido.
+Versão com acesso livre para funcionários + Admin com Login Supabase.
 
-PASSO OBRIGATÓRIO:
-1. Abra o Supabase.
-2. Vá em SQL Editor.
-3. Cole TODO o conteúdo do arquivo supabase.sql.
-4. Clique em RUN.
-5. Depois publique/suba novamente todos os arquivos deste ZIP.
+Funcionários sem senha podem:
+- fazer pedidos
+- ver lista atual
+- ver consolidado por produto
 
-Se abrir direto pelo computador e aparecer "Erro Supabase", rode o SQL novamente.
+Somente Admin pode:
+- marcar check/conferido
+- editar pedido
+- excluir pedido
+- limpar lista
+- salvar lista atendida com data
+- ver histórico
+- cadastrar/remover produtos
+- imprimir/PDF
+
+PASSO A PASSO:
+1. Rode o arquivo supabase.sql no Supabase.
+2. No Supabase, vá em Authentication > Users > Add user.
+3. Crie seu e-mail e senha de admin.
+4. Abra o app normalmente.
+5. Funcionários usam sem senha.
+6. Para liberar admin, clique em "Entrar como admin" no menu e informe e-mail/senha.
+
+IMPORTANTE:
+O app usa Row Level Security do Supabase:
+- anon: só pode ler e criar pedidos.
+- authenticated: pode usar as funções administrativas.
 
 
-Atualização desta versão:
-- Corrigido caminho do logo da empresa.
-- Adicionado campo Data da lista no fechamento mensal.
-- Histórico mostra a data escolhida da lista.
-
-IMPORTANTE: rode novamente o supabase.sql para adicionar a coluna data_lista.
-
-- Na Lista Geral, agora existe o botão ✅ Lista Atendida com campo de data para salvar direto no histórico.
+CONTROLE DE ACESSO CORRIGIDO:
+- O sistema sempre abre como Funcionário.
+- Funcionário não vê botões administrativos.
+- Funcionário pode apenas adicionar pedido, ver lista e consolidado.
+- Para liberar funções administrativas, clique em Entrar como admin e use o usuário criado em Supabase > Authentication > Users.
+- Se o navegador antigo ficou com login salvo, clique em Sair do admin ou limpe o cache/localStorage.
