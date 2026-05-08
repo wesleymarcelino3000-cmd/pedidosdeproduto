@@ -15,3 +15,11 @@ PASSO OBRIGATÓRIO:
 5. Depois publique/suba novamente todos os arquivos deste ZIP.
 
 Se abrir direto pelo computador e aparecer "Erro Supabase", rode o SQL novamente.
+
+
+Atualização desta versão:
+- Corrigido caminho do logo da empresa.
+- Adicionado campo Data da lista no fechamento mensal.
+- Histórico mostra a data escolhida da lista.
+
+IMPORTANTE: rode novamente o supabase.sql para adicionar a coluna data_lista.

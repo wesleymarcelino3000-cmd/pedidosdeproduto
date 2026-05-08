@@ -46,13 +46,15 @@ function normalize(row) {
   return { id: row.id, funcionario: row.funcionario, produto: row.produto, quantidade: Number(row.quantidade), checked: Boolean(row.checked), createdAt: row.created_at || row.createdAt || new Date().toISOString(), arquivado: Boolean(row.arquivado) };
 }
 function normalizeArchive(row) {
-  return { id: row.id, mes: row.mes_referencia || row.mes, observacao: row.observacao || '', totalPedidos: row.total_pedidos || row.totalPedidos || 0, totalItens: row.total_itens || row.totalItens || 0, pedidos: row.pedidos_json || row.pedidos || [], createdAt: row.created_at || row.createdAt || new Date().toISOString() };
+  return { id: row.id, mes: row.mes_referencia || row.mes, dataLista: row.data_lista || row.dataLista || '', observacao: row.observacao || '', totalPedidos: row.total_pedidos || row.totalPedidos || 0, totalItens: row.total_itens || row.totalItens || 0, pedidos: row.pedidos_json || row.pedidos || [], createdAt: row.created_at || row.createdAt || new Date().toISOString() };
 }
 function normalizeProduct(row) { return row.nome || row.produto || row.name || ''; }
 function setStatus(text) { const el = $('statusConexao'); if (el) el.textContent = text; }
 function toast(msg) { const el = document.createElement('div'); el.className = 'toast'; el.textContent = msg; document.body.appendChild(el); setTimeout(() => el.remove(), 2600); }
 function fmtDate(iso) { try { return new Date(iso).toLocaleString('pt-BR'); } catch { return '-'; } }
 function currentMonth() { return new Date().toISOString().slice(0, 7); }
+function currentDate() { return new Date().toISOString().slice(0, 10); }
+function fmtDateOnly(dateStr) { if (!dateStr) return '-'; const [y,m,d] = String(dateStr).slice(0,10).split('-'); return y && m && d ? `${d}/${m}/${y}` : dateStr; }
 function escapeHtml(str) { return String(str ?? '').replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c])); }
 
 function abrirAba(nome) {
@@ -139,18 +141,19 @@ async function limparPedidos() {
 }
 async function salvarListaMes() {
   if (!pedidos.length) { toast('Não existe pedido para salvar.'); return; }
-  const mes = $('mesReferencia').value || currentMonth();
+  const dataLista = $('dataLista').value || currentDate();
+  const mes = $('mesReferencia').value || dataLista.slice(0, 7) || currentMonth();
   const observacao = $('obsMes').value.trim() || 'Lista mensal atendida';
   const totalPedidos = pedidos.length;
   const totalItens = pedidos.reduce((s, p) => s + Number(p.quantidade), 0);
   const snapshot = pedidos.map(p => ({ funcionario: p.funcionario, produto: p.produto, quantidade: p.quantidade, checked: p.checked, data: p.createdAt }));
   if (!confirm(`Salvar a lista de ${mes} como atendida e limpar a lista atual?`)) return;
   if (!usandoNuvem) {
-    historico.unshift({ id: crypto.randomUUID(), mes, observacao, totalPedidos, totalItens, pedidos: snapshot, createdAt: new Date().toISOString() });
+    historico.unshift({ id: crypto.randomUUID(), mes, dataLista, observacao, totalPedidos, totalItens, pedidos: snapshot, createdAt: new Date().toISOString() });
     pedidos = [];
     saveLocal(); saveHistLocal(); renderTudo(); toast('Lista do mês salva.'); return;
   }
-  await supaFetch(archiveApi, { method: 'POST', headers: headers({ Prefer: 'return=minimal' }), body: JSON.stringify({ mes_referencia: mes, observacao, total_pedidos: totalPedidos, total_itens: totalItens, pedidos_json: snapshot }) });
+  await supaFetch(archiveApi, { method: 'POST', headers: headers({ Prefer: 'return=minimal' }), body: JSON.stringify({ mes_referencia: mes, data_lista: dataLista, observacao, total_pedidos: totalPedidos, total_itens: totalItens, pedidos_json: snapshot }) });
   for (const id of pedidos.map(p => p.id)) {
     await supaFetch(`${api}?id=eq.${id}`, { method: 'PATCH', headers: headers({ Prefer: 'return=minimal' }), body: JSON.stringify({ arquivado: true, checked: true }) });
   }
@@ -201,7 +204,7 @@ function renderPedidos() {
   $('totalItens').textContent = pedidos.reduce((s, p) => s + Number(p.quantidade), 0);
   $('totalCheck').textContent = pedidos.filter(p => p.checked).length;
   const prev = $('previewMes');
-  if (prev) prev.textContent = `Lista atual: ${pedidos.length} pedidos • ${pedidos.reduce((s, p) => s + Number(p.quantidade), 0)} itens • ${pedidos.filter(p => p.checked).length} conferidos.`;
+  if (prev) prev.textContent = `Lista atual: ${pedidos.length} pedidos • ${pedidos.reduce((s, p) => s + Number(p.quantidade), 0)} itens • ${pedidos.filter(p => p.checked).length} conferidos • Data selecionada: ${fmtDateOnly($('dataLista')?.value || currentDate())}.`;
 }
 function renderResumo() {
   const box = $('resumoProdutos');
@@ -225,7 +228,7 @@ function renderHistorico() {
     const div = document.createElement('div'); div.className = 'history-card';
     const resumo = {};
     (h.pedidos || []).forEach(p => { resumo[p.produto] = (resumo[p.produto] || 0) + Number(p.quantidade); });
-    div.innerHTML = `<h4>Lista ${escapeHtml(h.mes)}</h4><div class="meta">Salva em ${fmtDate(h.createdAt)} • ${h.totalPedidos} pedidos • ${h.totalItens} itens</div><p>${escapeHtml(h.observacao)}</p><details><summary>Ver produtos e funcionários</summary><ul>${Object.entries(resumo).map(([prod, q]) => `<li><strong>${escapeHtml(prod)}</strong>: ${q}</li>`).join('')}</ul><hr><ul>${(h.pedidos || []).map(p => `<li>${escapeHtml(p.funcionario)} — ${escapeHtml(p.produto)} — ${p.quantidade}</li>`).join('')}</ul></details>`;
+    div.innerHTML = `<h4>Lista ${escapeHtml(h.mes)}</h4><div class="meta">Data da lista: ${fmtDateOnly(h.dataLista)} • Salva em ${fmtDate(h.createdAt)} • ${h.totalPedidos} pedidos • ${h.totalItens} itens</div><p>${escapeHtml(h.observacao)}</p><details><summary>Ver produtos e funcionários</summary><ul>${Object.entries(resumo).map(([prod, q]) => `<li><strong>${escapeHtml(prod)}</strong>: ${q}</li>`).join('')}</ul><hr><ul>${(h.pedidos || []).map(p => `<li>${escapeHtml(p.funcionario)} — ${escapeHtml(p.produto)} — ${p.quantidade}</li>`).join('')}</ul></details>`;
     box.appendChild(div);
   });
 }
@@ -252,12 +255,15 @@ async function editarPedido(id) {
 }
 
 function configurarEventos() {
+  $('dataLista').value = currentDate();
   $('mesReferencia').value = currentMonth();
   document.querySelectorAll('.nav[data-tab]').forEach(btn => btn.addEventListener('click', () => abrirAba(btn.dataset.tab)));
   $('recarregar').addEventListener('click', carregarPedidos);
   $('imprimir').addEventListener('click', () => window.print());
   $('busca').addEventListener('input', renderPedidos);
   $('limparTudo').addEventListener('click', async () => { if (!confirm('Deseja apagar todos os pedidos atuais?')) return; try { await limparPedidos(); renderTudo(); toast('Lista limpa.'); } catch (e) { console.error(e); toast('Erro ao limpar lista.'); } });
+  $('dataLista').addEventListener('change', renderPedidos);
+  $('mesReferencia').addEventListener('change', renderPedidos);
   $('salvarMes').addEventListener('click', async () => { try { await salvarListaMes(); } catch (e) { console.error(e); toast('Erro Supabase: ' + e.message); } });
   $('carregarHistorico').addEventListener('click', carregarHistorico);
 

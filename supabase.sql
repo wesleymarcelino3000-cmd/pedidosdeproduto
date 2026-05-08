@@ -35,11 +35,14 @@ create table if not exists public.listas_pedidos_mensais (
   id uuid primary key default gen_random_uuid(),
   mes_referencia text not null,
   observacao text,
+  data_lista date,
   total_pedidos integer not null default 0,
   total_itens integer not null default 0,
   pedidos_json jsonb not null default '[]'::jsonb,
   created_at timestamptz not null default now()
 );
+
+alter table public.listas_pedidos_mensais add column if not exists data_lista date;
 
 alter table public.listas_pedidos_mensais enable row level security;
 
