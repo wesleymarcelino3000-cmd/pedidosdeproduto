@@ -2,6 +2,7 @@
   "name": "Inno Life Pedidos",
   "short_name": "Pedidos",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#06130b",
   "theme_color": "#06130b",
