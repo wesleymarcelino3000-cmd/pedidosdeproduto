@@ -115,3 +115,39 @@ body.is-admin .actions .admin-only{display:inline-block!important;}
 body:not(.is-admin) #tab-produtos,
 body:not(.is-admin) #tab-mes,
 body:not(.is-admin) #tab-historico{display:none!important;}
+
+/* Pedidos múltiplos e lista agrupada por funcionário */
+.pedido-multiplo-form{display:grid;gap:16px;margin-top:20px}
+.multi-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px;border:1px solid #dfe8ca;border-radius:22px;background:linear-gradient(135deg,#f9fff0,#ffffff)}
+.multi-head strong{display:block;color:#132916;font-size:16px}
+.multi-head span{display:block;color:#65745f;font-size:13px;margin-top:4px}
+.multi-itens{display:grid;gap:12px;max-height:45vh;overflow:auto;padding-right:8px}
+.item-row{display:grid;grid-template-columns:1fr 140px auto;gap:12px;align-items:end;padding:14px;border:1px solid #dfe8ca;border-radius:22px;background:#fff;box-shadow:0 10px 25px rgba(34,60,20,.06)}
+.item-row .delete{height:50px;align-self:end}
+.submit-multi{justify-self:start;min-width:260px}
+.funcionario-group-row td{background:linear-gradient(135deg,#0b5c24,#bfcb00)!important;color:#fff!important;border-top:14px solid #fff;padding:14px 16px!important}
+.funcionario-group-row strong{font-size:16px;margin-right:14px}
+.funcionario-group-row span{font-size:12px;font-weight:900;opacity:.9;text-transform:uppercase;letter-spacing:.3px}
+.funcionario-cell{font-weight:900;color:#33442f}
+@media(max-width:900px){.multi-head{display:block}.multi-head button{margin-top:12px;width:100%}.item-row{grid-template-columns:1fr}.submit-multi{width:100%;min-width:0}}
+
+@media print{
+  body.printing-lista .hero,
+  body.printing-lista #tab-novo,
+  body.printing-lista #tab-consolidado,
+  body.printing-lista #tab-produtos,
+  body.printing-lista #tab-mes,
+  body.printing-lista #tab-historico,
+  body.printing-lista .quick-save-list,
+  body.printing-lista .summary-line{display:none!important}
+  body.printing-lista #tab-lista{display:block!important}
+  body.printing-lista #tab-lista:before{content:'LISTA DE PEDIDOS - INNO LIFE';display:block;font-size:22px;font-weight:950;color:#111;margin:0 0 10px;text-align:center}
+  body.printing-lista #tab-lista .panel-title p{display:none}
+  body.printing-lista .panel-head{display:block!important;margin-bottom:10px}
+  body.printing-lista .table-wrap{max-height:none!important;overflow:visible!important;border:1px solid #222;border-radius:0}
+  body.printing-lista table{min-width:0!important;width:100%!important}
+  body.printing-lista th:nth-child(5),body.printing-lista td:nth-child(5),body.printing-lista th:nth-child(6),body.printing-lista td:nth-child(6){display:none!important}
+  body.printing-lista th,body.printing-lista td{border:1px solid #999!important;padding:8px!important;color:#111!important;background:#fff!important}
+  body.printing-lista .funcionario-group-row td{background:#eaeaea!important;color:#111!important;border:1px solid #444!important}
+  body.printing-lista .check{width:14px;height:14px}
+}

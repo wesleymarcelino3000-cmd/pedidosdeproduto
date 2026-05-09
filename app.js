@@ -259,19 +259,43 @@ function excluirProdutoLocal(nome) {
 }
 
 function renderTudo() { renderPedidos(); renderResumo(); renderHistorico(); renderProdutos(); }
+function agruparPorFuncionario(lista) {
+  return lista.reduce((acc, p) => {
+    const nome = (p.funcionario || 'Sem nome').trim();
+    if (!acc[nome]) acc[nome] = [];
+    acc[nome].push(p);
+    return acc;
+  }, {});
+}
 function renderPedidos() {
   const lista = $('listaPedidos');
   if (!lista) return;
   const busca = ($('busca')?.value || '').toLowerCase();
   lista.innerHTML = '';
   const filtrados = pedidos.filter(p => p.funcionario.toLowerCase().includes(busca) || p.produto.toLowerCase().includes(busca));
-  if (!filtrados.length) lista.appendChild($('emptyTemplate').content.cloneNode(true));
-  else filtrados.forEach(p => {
-    const tr = document.createElement('tr');
-    if (p.checked) tr.classList.add('checked');
-    tr.innerHTML = `<td><input class="check" type="checkbox" ${p.checked ? 'checked' : ''} ${isAdmin ? '' : 'disabled'} data-action="check" data-id="${p.id}"></td><td><strong>${escapeHtml(p.funcionario)}</strong></td><td>${escapeHtml(p.produto)}</td><td><strong>${p.quantidade}</strong></td><td>${fmtDate(p.createdAt)}</td><td>${isAdmin ? `<button type="button" class="mini" data-action="edit" data-id="${p.id}">Editar</button><button type="button" class="mini delete" data-action="delete" data-id="${p.id}">Excluir</button>` : '<span class="muted">Somente admin</span>'}</td>`;
-    lista.appendChild(tr);
-  });
+  if (!filtrados.length) {
+    lista.appendChild($('emptyTemplate').content.cloneNode(true));
+  } else {
+    const grupos = agruparPorFuncionario(filtrados);
+    Object.entries(grupos)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .forEach(([funcionario, itens]) => {
+        const totalFuncionario = itens.reduce((s, p) => s + Number(p.quantidade), 0);
+        const conferidos = itens.filter(p => p.checked).length;
+        const header = document.createElement('tr');
+        header.className = 'funcionario-group-row';
+        header.innerHTML = `<td colspan="6"><strong>${escapeHtml(funcionario)}</strong><span>${itens.length} produtos • ${totalFuncionario} itens • ${conferidos} conferidos</span></td>`;
+        lista.appendChild(header);
+        itens
+          .sort((a, b) => a.produto.localeCompare(b.produto))
+          .forEach(p => {
+            const tr = document.createElement('tr');
+            if (p.checked) tr.classList.add('checked');
+            tr.innerHTML = `<td><input class="check" type="checkbox" ${p.checked ? 'checked' : ''} ${isAdmin ? '' : 'disabled'} data-action="check" data-id="${p.id}"></td><td class="funcionario-cell">${escapeHtml(funcionario)}</td><td>${escapeHtml(p.produto)}</td><td><strong>${p.quantidade}</strong></td><td>${fmtDate(p.createdAt)}</td><td>${isAdmin ? `<button type="button" class="mini" data-action="edit" data-id="${p.id}">Editar</button><button type="button" class="mini delete" data-action="delete" data-id="${p.id}">Excluir</button>` : '<span class="muted">Somente admin</span>'}</td>`;
+            lista.appendChild(tr);
+          });
+      });
+  }
   $('totalPedidos').textContent = pedidos.length;
   $('totalItens').textContent = pedidos.reduce((s, p) => s + Number(p.quantidade), 0);
   $('totalCheck').textContent = pedidos.filter(p => p.checked).length;
@@ -307,14 +331,38 @@ function renderHistorico() {
     box.appendChild(div);
   });
 }
+function preencherSelectProdutos(select) {
+  if (!select) return;
+  const valorAtual = select.value;
+  select.innerHTML = '<option value="">Selecione um produto</option>' + produtos.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+  if (valorAtual) select.value = valorAtual;
+}
 function renderProdutos() {
-  const select = $('produtoSelect');
-  if (select) {
-    select.innerHTML = '<option value="">Selecione um produto</option>' + produtos.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
-  }
+  document.querySelectorAll('.produtoSelect').forEach(preencherSelectProdutos);
   const box = $('listaProdutos');
   if (!box) return;
   box.innerHTML = produtos.map(p => `<div class="product-pill"><span>${escapeHtml(p)}</span>${isAdmin ? `<button type="button" data-produto="${escapeHtml(p)}">Remover</button>` : ''}</div>`).join('');
+}
+function criarLinhaItemPedido() {
+  const div = document.createElement('div');
+  div.className = 'item-row';
+  div.innerHTML = `<label>Produto
+      <select class="produtoSelect"></select>
+      <input class="produtoLivre" type="text" placeholder="Ou digite outro produto" />
+    </label>
+    <label>Quantidade
+      <input class="quantidadeItem" type="number" min="1" value="1" required />
+    </label>
+    <button type="button" class="mini delete removeItemPedido">Remover</button>`;
+  preencherSelectProdutos(div.querySelector('.produtoSelect'));
+  return div;
+}
+function coletarItensPedido() {
+  return Array.from(document.querySelectorAll('#multiItens .item-row')).map(row => {
+    const produto = (row.querySelector('.produtoLivre')?.value.trim() || row.querySelector('.produtoSelect')?.value.trim() || '');
+    const quantidade = Number(row.querySelector('.quantidadeItem')?.value || 0);
+    return { produto, quantidade };
+  }).filter(item => item.produto && item.quantidade > 0);
 }
 
 async function toggleCheck(id) { if (!exigirAdmin()) { renderTudo(); return; } const p = pedidos.find(x => x.id === id); if (!p) return; try { await atualizarPedido(id, { checked: !p.checked }); renderTudo(); } catch (e) { console.error(e); toast('Erro ao atualizar check.'); } }
@@ -339,7 +387,7 @@ function configurarEventos() {
   $('mesReferencia').value = currentMonth();
   document.querySelectorAll('.nav[data-tab]').forEach(btn => btn.addEventListener('click', () => abrirAba(btn.dataset.tab)));
   $('recarregar').addEventListener('click', carregarPedidos);
-  $('imprimir').addEventListener('click', () => window.print());
+  $('imprimir').addEventListener('click', () => { abrirAba('lista'); document.body.classList.add('printing-lista'); setTimeout(() => { window.print(); setTimeout(() => document.body.classList.remove('printing-lista'), 500); }, 120); });
   $('busca').addEventListener('input', renderPedidos);
   $('limparTudo').addEventListener('click', async () => { if (!confirm('Deseja apagar todos os pedidos atuais?')) return; try { await limparPedidos(); renderTudo(); toast('Lista limpa.'); } catch (e) { console.error(e); toast('Erro ao limpar lista.'); } });
   $('dataLista').addEventListener('change', () => { sincronizarDataLista($('dataLista').value); renderPedidos(); });
@@ -349,19 +397,39 @@ function configurarEventos() {
   $('salvarMes').addEventListener('click', async () => { try { await salvarListaMes(); abrirAba('historico'); } catch (e) { console.error(e); toast('Erro Supabase: ' + e.message); } });
   $('carregarHistorico').addEventListener('click', carregarHistorico);
 
+  $('addItemPedido')?.addEventListener('click', () => {
+    $('multiItens').appendChild(criarLinhaItemPedido());
+  });
+  $('multiItens')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('.removeItemPedido');
+    if (!btn) return;
+    const linhas = document.querySelectorAll('#multiItens .item-row');
+    if (linhas.length <= 1) { toast('Deixe pelo menos um produto no pedido.'); return; }
+    btn.closest('.item-row')?.remove();
+  });
+
   $('pedidoForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const funcionario = $('funcionario').value.trim();
-    const produto = ($('produtoLivre').value.trim() || $('produtoSelect').value.trim());
-    const quantidade = Number($('quantidade').value);
-    if (!funcionario || !produto || quantidade < 1) { toast('Preencha funcionário, produto e quantidade.'); return; }
-    const btn = e.target.querySelector('button[type="submit"]'); btn.disabled = true; btn.textContent = 'Salvando...';
+    const itens = coletarItensPedido();
+    if (!funcionario || !itens.length) { toast('Preencha funcionário e pelo menos um produto com quantidade.'); return; }
+    const btn = e.target.querySelector('button[type="submit"]'); btn.disabled = true; btn.textContent = 'Salvando pedido...';
     try {
-      await criarPedido({ funcionario, produto, quantidade });
-      if (!produtos.some(p => p.toLowerCase() === produto.toLowerCase())) { produtos.push(produto); produtos.sort((a, b) => a.localeCompare(b)); saveProdLocal(); }
-      renderTudo(); e.target.reset(); $('quantidade').value = 1; $('funcionario').focus(); toast('Pedido adicionado.'); abrirAba('lista');
+      for (const item of itens) {
+        await criarPedido({ funcionario, produto: item.produto, quantidade: item.quantidade });
+        if (!produtos.some(p => p.toLowerCase() === item.produto.toLowerCase())) produtos.push(item.produto);
+      }
+      produtos.sort((a, b) => a.localeCompare(b));
+      saveProdLocal();
+      renderTudo();
+      e.target.reset();
+      $('multiItens').innerHTML = '';
+      $('multiItens').appendChild(criarLinhaItemPedido());
+      $('funcionario').focus();
+      toast(`${itens.length} produto(s) adicionados para ${funcionario}.`);
+      abrirAba('lista');
     } catch (err) { console.error(err); toast('Erro Supabase: ' + err.message); }
-    finally { btn.disabled = false; btn.textContent = 'Adicionar pedido'; }
+    finally { btn.disabled = false; btn.textContent = 'Adicionar pedido completo'; }
   });
 
   $('produtoForm').addEventListener('submit', async (e) => {

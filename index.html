@@ -54,25 +54,40 @@
 
       <section id="tab-novo" class="panel tab show">
         <div class="panel-title"><h3>Novo pedido</h3><p>Exemplo: Wesley • 2 • Melasonina</p></div>
-        <form id="pedidoForm" class="form-grid">
+        <form id="pedidoForm" class="pedido-multiplo-form">
           <label>Funcionário
             <input id="funcionario" type="text" placeholder="Ex: Wesley" required />
           </label>
-          <label>Produto
-            <select id="produtoSelect"></select>
-            <input id="produtoLivre" type="text" placeholder="Ou digite outro produto" />
-          </label>
-          <label>Quantidade
-            <input id="quantidade" type="number" min="1" value="1" required />
-          </label>
-          <button class="primary" type="submit">Adicionar pedido</button>
+
+          <div class="multi-head">
+            <div>
+              <strong>Produtos do pedido</strong>
+              <span>Adicione vários produtos para o mesmo funcionário em uma única vez.</span>
+            </div>
+            <button type="button" class="soft" id="addItemPedido">+ Adicionar produto</button>
+          </div>
+
+          <div id="multiItens" class="multi-itens">
+            <div class="item-row">
+              <label>Produto
+                <select class="produtoSelect"></select>
+                <input class="produtoLivre" type="text" placeholder="Ou digite outro produto" />
+              </label>
+              <label>Quantidade
+                <input class="quantidadeItem" type="number" min="1" value="1" required />
+              </label>
+              <button type="button" class="mini delete removeItemPedido">Remover</button>
+            </div>
+          </div>
+
+          <button class="primary submit-multi" type="submit">Adicionar pedido completo</button>
         </form>
-        <p class="hint">Para cadastrar novos produtos, entre na aba <b>Produtos</b>.</p>
+        <p class="hint">Exemplo: Wesley pode pedir 1 Melasonina, 1 Bom Hálito e 1 Enxazen no mesmo lançamento.</p>
       </section>
 
       <section id="tab-lista" class="panel tab">
         <div class="panel-head">
-          <div class="panel-title"><h3>Lista atual de pedidos</h3><p>Marque o check quando separar/conferir o item.</p></div>
+          <div class="panel-title"><h3>Lista atual de pedidos</h3><p>Pedidos agrupados por funcionário. Marque o check quando separar/conferir cada item.</p></div>
           <div class="actions"><input id="busca" type="search" placeholder="Buscar funcionário ou produto..." /><button type="button" class="danger admin-only" id="limparTudo">Limpar tudo</button></div>
         </div>
         <div class="quick-save-list admin-only">
